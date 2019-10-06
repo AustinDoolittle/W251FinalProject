@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  poser:
+    image: poser
+    build:
+      context: .
+      dockerfile: posecnn.dockerfile
+    environment:
+      - DISPLAY=${DISPLAY}
+    volumes:
+      - /tmp/.X11-unix/:/tmp/.X11-unix
+    devices: 
+      - /dev/video1:/dev/video0
