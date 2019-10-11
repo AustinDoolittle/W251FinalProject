@@ -1,23 +1,48 @@
+import argparse
+import sys
+
 import tensorflow as tf
 import cv2
 
-def main():
+
+def parse_args(argv):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model-file', required=True)
+
+    return parser.parse_args(argv)
+
+def load_model(model_file, sess)
+    graph_def = tf.GraphDef()
+    with tf.gfile.GFile(model_file) as fp:
+        graph_def.ParseFromString(fp.read())
+    
+    offsets = sess.graph.get_tensor_by_name('offset_2:0')
+    displacement_fwd = sess.graph.get_tensor_by_name('displacement_fwd_2:0')
+    displacement_bwd = sess.graph.get_tensor_by_name('displacement_bwd_2:0')
+    heatmaps = sess.graph.get_tensor_by_name('heatmap:0')
+
+    return model_cfg, [heatmaps, offsets, displacement_fwd, displacement_bwd]
+
+def main(args):
     print('Opening video capture')
     cap = cv2.VideoCapture(0)
     print('successfully opened')
     
-    c = 0
-    while True:
-        res, frame = cap.read()
-        c += 1
+    with tf.Session() as sess:
+        model, outputs = load_model(args.model_file, sess)
+        c = 0
+        while True:
+            res, frame = cap.read()
+            c += 1
 
-        if not res:
-            logger.info('Failed to grab frame {c}')
-            continue
+            if not res:
+                print('Failed to grab frame {c}')
+                continue
 
-        cv2.imshow("person!", frame)
-        cv2.waitKey(1)
+            cv2.imshow("person!", frame)
+            cv2.waitKey(1)
 
 if __name__ == '__main__':
-    main()
+    args = parse_args(sys.argv[1:])
+    main(args)
     
