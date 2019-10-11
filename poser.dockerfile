@@ -7,7 +7,8 @@ RUN apt-get update && \
 
 RUN pip3 install requests
 
-COPY download.py /tmp/download.py
+COPY download.py /tmp/
+COPY constants.py /tmp/
 
 RUN python3 /tmp/download.py  --output-model-file /tmp/model.pb
 
@@ -45,12 +46,13 @@ RUN rm -rf /tmp/*
 # create our workspace
 RUN mkdir /app
 
+# copy the model from the build step
+COPY --from=0 /tmp/model.pb /app
 
 # copy our source
 COPY find_person.py /app
-
-# copy the model from the build step
-COPY --from=0 /tmp/model.pb /app
+COPY constants.py /app
+COPY decode.py /app
 
 # set the entrypoint
 # ENTRYPOINT python3

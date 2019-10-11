@@ -15,28 +15,7 @@ import requests
 import tensorflow as tf
 from tensorflow.python.tools.freeze_graph import freeze_graph
 
-mobilenet100_architecture = [
-    ('conv2d', 2),
-    ('separableConv', 1),
-    ('separableConv', 2),
-    ('separableConv', 1),
-    ('separableConv', 2),
-    ('separableConv', 1),
-    ('separableConv', 2),
-    ('separableConv', 1),
-    ('separableConv', 1),
-    ('separableConv', 1),
-    ('separableConv', 1),
-    ('separableConv', 1),
-    ('separableConv', 2),
-    ('separableConv', 1),
-]
-
-
-MODEL_BASE_URL = "https://storage.googleapis.com/tfjs-models/weights/posenet/mobilenet_v1_101"
-MANIFEST_FILENAME = 'manifest.json'
-OUTPUT_STRIDE = 16
-IMAGE_SIZE = 513
+from constants import *
 
 
 def _download_file(output_dir, filename):
@@ -186,7 +165,7 @@ def convert(input_dir, output_model_file):
 
     cg = tf.Graph()
     with cg.as_default():
-        layers = to_output_strided_layers(mobilenet100_architecture)
+        layers = to_output_strided_layers(MOBILENET_V1_101)
         variables = load_variables(input_dir)
 
         init = tf.global_variables_initializer()
