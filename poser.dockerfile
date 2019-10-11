@@ -1,4 +1,4 @@
-FROM w251/keras:dev-tx2-4.2_b158-py3 as model_builder
+FROM w251/keras:dev-tx2-4.2_b158-py3 
 
 RUN apt-get update && \
     apt-get install -u -y  \        
@@ -13,7 +13,6 @@ RUN python3 /tmp/download.py  --output-model-file /tmp/model.pb
 
 FROM w251/keras:dev-tx2-4.2_b158-py3
 ARG OPEN_CV_URL=http://169.44.201.108:7002/jetpacks/4.2.1
-ARG MODEL_URL=https://storage.googleapis.com/download.tensorflow.org/models/tflite/posenet_mobilenet_v1_100_257x257_multi_kpt_stripped.tflite
 
 # install OpenCV and TF deps
 RUN apt-get update && \
@@ -46,11 +45,12 @@ RUN rm -rf /tmp/*
 # create our workspace
 RUN mkdir /app
 
-# copy the model from the build step
-COPY --from=model_builder /tmp/model.pb /app/model.pb
 
 # copy our source
 COPY find_person.py /app
+
+# copy the model from the build step
+COPY --from=0 /tmp/model.pb /app
 
 # set the entrypoint
 # ENTRYPOINT python3

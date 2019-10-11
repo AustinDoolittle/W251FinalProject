@@ -11,17 +11,19 @@ def parse_args(argv):
 
     return parser.parse_args(argv)
 
-def load_model(model_file, sess)
+def load_model(model_file, sess):
     graph_def = tf.GraphDef()
-    with tf.gfile.GFile(model_file) as fp:
+    with tf.gfile.GFile(model_file, 'rb') as fp:
         graph_def.ParseFromString(fp.read())
     
+    tf.import_graph_def(graph_def, name='')
+
     offsets = sess.graph.get_tensor_by_name('offset_2:0')
     displacement_fwd = sess.graph.get_tensor_by_name('displacement_fwd_2:0')
     displacement_bwd = sess.graph.get_tensor_by_name('displacement_bwd_2:0')
     heatmaps = sess.graph.get_tensor_by_name('heatmap:0')
 
-    return model_cfg, [heatmaps, offsets, displacement_fwd, displacement_bwd]
+    return heatmaps, offsets, displacement_fwd, displacement_bwd
 
 def main(args):
     print('Opening video capture')
@@ -29,7 +31,8 @@ def main(args):
     print('successfully opened')
     
     with tf.Session() as sess:
-        model, outputs = load_model(args.model_file, sess)
+        sess.graph.as_default()
+        heatmaps, offsets, displacement_fwd, displacement_bwd = load_model(args.model_file, sess)
         c = 0
         while True:
             res, frame = cap.read()

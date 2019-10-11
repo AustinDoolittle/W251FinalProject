@@ -226,13 +226,6 @@ def convert(input_dir, output_model_file):
 
 
 def download_and_convert(output_model_file):
-    """Downloads and converts the model to python tf
-
-    This is based heavily off of:
-    https://github.com/rwightman/posenet-python
-    
-    """
-
     with tempfile.TemporaryDirectory() as workdir_name:
         _download_model(workdir_name)
 
