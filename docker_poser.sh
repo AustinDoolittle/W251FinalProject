@@ -4,8 +4,12 @@ set -e
 xhost +
 docker build -t poser -f poser.dockerfile .
 docker run \
-    --privileged \
     -e DISPLAY=$DISPLAY \
-    -v /tmp/.X11-unix/:/tmp/.X11-unix \
+    -e QT_X11_NO_MITSHM=1 \
+    -v /tmp:/tmp \
     --device /dev/video1:/dev/video0 \
-    poser
+    poser \
+    --max-poses 1 \
+    --pose-threshold 0.25 \
+    --part-threshold 0.25 \
+

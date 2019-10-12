@@ -26,6 +26,8 @@ RUN apt-get update && \
         libgstreamer-plugins-base1.0-dev \
         libgtk2.0-dev \
         libswscale-dev \
+        libcanberra-gtk-module \
+        libcanberra-gtk3-module \
         libv4l-dev \
         python \
         python3 \
@@ -50,9 +52,9 @@ RUN mkdir /app
 COPY --from=0 /tmp/model.pb /app
 
 # copy our source
-COPY find_person.py /app
 COPY constants.py /app
 COPY decode.py /app
+COPY find_person.py /app
 
 # set the entrypoint
 # ENTRYPOINT python3
