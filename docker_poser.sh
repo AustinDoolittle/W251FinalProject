@@ -2,6 +2,8 @@
 set -e
 
 xhost +
+sudo nvpmodel -m 0
+sudo jetson_clocks
 docker build -t poser -f poser.dockerfile .
 docker run \
     --privileged \

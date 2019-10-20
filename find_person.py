@@ -1,6 +1,7 @@
 import argparse
 import logging
 import sys
+import time
 
 import tensorflow as tf
 import numpy as np
@@ -18,6 +19,33 @@ def parse_args(argv):
     parser.add_argument('--part-threshold', type=float, default=0.5)
 
     return parser.parse_args(argv)
+
+
+class FrameCounter:
+    def __init__(self):
+        self._count = 0
+        self._prev_frame = 0
+        self.fps = 0
+
+    def tick(self):
+        if not self._prev_frame:
+            self._prev_frame = time.time()
+            return
+
+        now = time.time()
+        spf = now - self._prev_frame
+        self.fps = 1 / spf
+        self._prev_frame = now
+
+    def overlay_fps(self, img):
+        if not self.fps:
+            fps_text = '--'
+        else:
+            fps_text = f'{self.fps:.1f}'
+
+        return cv2.putText(img, f'{fps_text} FPS', (25, 25), cv2.FONT_HERSHEY_SIMPLEX,  
+                        0.5, (0, 255, 0), 2, cv2.LINE_AA) 
+
 
 def load_model(model_file, sess):
     graph_def = tf.GraphDef()
@@ -142,13 +170,6 @@ def overlay_poses(poses, frame, instance_score_threshold=0.5, part_score_thresho
     kp_frame = cv2.drawKeypoints(frame, keypoints, outImage=np.array([]))
     return cv2.polylines(kp_frame, lines, isClosed=False, color=(255,255,0))
 
-def overlay_fps(cap, frame):
-    # TODO this currently just does the stock fps
-    # we'll need to determine a method for true fps 
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    return cv2.putText(frame, f'FPS: {fps:.3f}', (25, 25), cv2.FONT_HERSHEY_SIMPLEX,  
-                       0.5, (0, 255, 0), 2, cv2.LINE_AA) 
-
 def publish_poses(poses):
     # TODO Wire up MQTT
     pass
@@ -161,6 +182,8 @@ def main(args):
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT,720)
     print('successfully opened')
     
+    frame_counter = FrameCounter()
+
     with tf.Session() as sess:
         # load our model
         sess.graph.as_default()
@@ -177,6 +200,7 @@ def main(args):
             if not res:
                 print(f'Failed to grab frame {c}')
                 continue
+            frame_counter.tick()
 
             # scale down the frame, normalize the pixels
             input_image, scale = process_frame(frame)
@@ -208,7 +232,7 @@ def main(args):
                 part_score_threshold=args.part_threshold
             )
 
-            out_frame = overlay_fps(cap, out_frame)
+            out_frame = frame_counter.overlay_fps(out_frame)
 
             # sent our poses to the MQTT topic
             publish_poses(poses)
