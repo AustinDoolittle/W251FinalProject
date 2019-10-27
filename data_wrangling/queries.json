@@ -1,0 +1,56 @@
+{
+    "bridge": {
+        "plaintext_name": "bridge",
+        "other_queries": [
+            "setu bandha arvangasana"
+        ]
+    },
+    "childs": {
+        "plaintext_name": "childs",
+        "other_queries": [
+            "balasana"
+        ]
+    }, 
+    "downwarddog": {
+        "plaintext_name": "downward dog",
+        "other_queries": [
+            "adho mukha svanasana"
+        ]
+    },
+    "mountain": {
+        "plaintext_name": "mountain",
+        "other_queries": [
+            "tadasana"
+        ]
+    },
+    "plank": {
+        "plaintext_name": "plank",
+        "other_queries": [
+            "kumbhakasana"
+        ]
+    },
+    "seatedforwardbend": {
+        "plaintext_name": "seated forward bend",
+        "other_queries": [
+            "paschimottanasana"
+        ]
+    },
+    "tree": {
+        "plaintext_name": "tree",
+        "other_queries": [
+            "vrksasana"
+        ]
+    },
+    "trianglepose": {
+        "plaintext_name": "triangle pose",
+        "other_queries": [
+            "utthita trikonasana"
+        ]
+    },
+    "warrior": {
+        "plaintext_name": "warrior 2",
+        "other_queries": [
+            "virabhadrasana 2"
+        ]
+    }
+}
