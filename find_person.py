@@ -2,6 +2,7 @@ import argparse
 import logging
 import sys
 import time
+import os
 
 import tensorflow as tf
 import numpy as np
@@ -9,14 +10,23 @@ import cv2
 
 from constants import *
 import decode
+from model import PoseNetModel
 
+def file_generator(input_dir):
+    class_dirs = list(os.listdir(input_dir))
+
+    for class_dir in class_dirs:
+        class_dir_path = os.path.join(input_dir, class_dir)
+
+        class_files = list(os.listdir(class_dir_path))
+        for class_file in class_files:
+            class_file_path = os.path.join(class_dir_path, class_file)
+        
+            yield (class_dir, class_file_path)
 
 def parse_args(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('--model-file', required=True)
-    parser.add_argument('--max-poses', default=2)
-    parser.add_argument('--pose-threshold', type=float, default=0.5)
-    parser.add_argument('--part-threshold', type=float, default=0.5)
 
     return parser.parse_args(argv)
 
@@ -41,78 +51,11 @@ class FrameCounter:
         if not self.fps:
             fps_text = '--'
         else:
-            fps_text = f'{self.fps:.1f}'
+            fps_text = '%.1f'%self.fps
 
-        return cv2.putText(img, f'{fps_text} FPS', (25, 25), cv2.FONT_HERSHEY_SIMPLEX,  
+        return cv2.putText(img, fps_text + ' FPS', (25, 25), cv2.FONT_HERSHEY_SIMPLEX,  
                         0.5, (0, 255, 0), 2, cv2.LINE_AA) 
 
-
-def load_model(model_file, sess):
-    graph_def = tf.GraphDef()
-    with tf.gfile.GFile(model_file, 'rb') as fp:
-        graph_def.ParseFromString(fp.read())
-    
-    tf.import_graph_def(graph_def, name='')
-
-    offsets = sess.graph.get_tensor_by_name('offset_2:0')
-    displacement_fwd = sess.graph.get_tensor_by_name('displacement_fwd_2:0')
-    displacement_bwd = sess.graph.get_tensor_by_name('displacement_bwd_2:0')
-    heatmaps = sess.graph.get_tensor_by_name('heatmap:0')
-
-    return heatmaps, offsets, displacement_fwd, displacement_bwd
-
-def process_frame(source_img):
-    """https://github.com/rwightman/posenet-python/blob/97c6f6a3e0f25bbc9c9095ddef6e768e56c2ed43/posenet/utils.py#L13"""
-
-    scale = np.array([source_img.shape[0] / IMAGE_SIZE, source_img.shape[1] / IMAGE_SIZE])
-
-    input_img = cv2.resize(source_img, (IMAGE_SIZE, IMAGE_SIZE), interpolation=cv2.INTER_LINEAR)
-    input_img = cv2.cvtColor(input_img, cv2.COLOR_BGR2RGB).astype(np.float32)
-    input_img = input_img * (2.0 / 255.0) - 1.0
-    input_img = np.expand_dims(input_img, axis=0)
-
-    return input_img, scale
-
-def convert_raw_output_to_poses(pose_scores, keypoint_scores, keypoint_coords, scale):
-    """Converts model output to a easy to understand dictionary
-
-    Outputs a list of dictionaries, each dictionary follows this format:
-
-    {
-        "score": 0.75   # The overall score of the pose instance
-        "parts": {      # Dictionary of the different body parts. See constants.PART_NAMES
-            "nose": {                   # A single part instance   
-                "score": 0.75,          # the score of this body part
-                "coords": [123, 456]    # the coordinate of the body part, scaled to the original image size
-            },
-            ...
-        }
-    }
-
-    Note that no thresholding occurs here, all instances and body parts are included in the output
-    
-    """
-
-    converted_poses = []
-
-    # iterate over instances
-    for score, k_scores, k_coords in zip(pose_scores, keypoint_scores, keypoint_coords):
-
-        # iterate over keypoints in this instance
-        pose_dict = {
-            'score': score,
-            'parts': {}
-        }
-        for k_score, k_coord, part_name in zip(k_scores, k_coords, PART_NAMES):
-            scaled_coord = (k_coord[0] * scale[0], k_coord[1] * scale[1])
-            pose_dict['parts'][part_name] = {
-                'coords': scaled_coord,
-                'score': score
-            }
-
-        converted_poses.append(pose_dict)
-    
-    return converted_poses
 
 def get_keypoints(parts, threshold=0.5):
     keypoints = []
@@ -147,7 +90,7 @@ def overlay_score(pose, frame, offset = 150):
     
     x_coord = int(parts['nose']['coords'][1])
     y_coord = int(parts['nose']['coords'][0]) - 50
-    text = f'Score: {pose_score:.3f}'
+    text = 'Score: %.3f'%pose_score
     return cv2.putText(frame, text, (x_coord, y_coord), cv2.FONT_HERSHEY_SIMPLEX,  
                     0.5, (0, 255, 0), 2, cv2.LINE_AA)
 
@@ -183,63 +126,43 @@ def main(args):
     print('successfully opened')
     
     frame_counter = FrameCounter()
+    model = PoseNetModel(args.model_file)
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    # enter loop
+    c = 0
+    # while True:
+    for class_name, image_path in file_generator('/app/data/images'):
+        # read a frame
+        # res, frame = cap.read()
+        frame = cv2.imread(image_path)
 
-    with tf.Session() as sess:
-        # load our model
-        sess.graph.as_default()
-        model_outputs = load_model(args.model_file, sess)
+        c += 1
 
-        # enter control loop
-        c = 0
-        while True:
-            # read a frame
-            res, frame = cap.read()
-            c += 1
+        # # check if we were successful
+        # if not res:
+        #     print('Failed to grab frame %i'%c)
+        #     continue
+        frame_counter.tick()
 
-            # check if we were successful
-            if not res:
-                print(f'Failed to grab frame {c}')
-                continue
-            frame_counter.tick()
+        # scale down the frame, normalize the pixels
+        poses = model.predict(frame)
 
-            # scale down the frame, normalize the pixels
-            input_image, scale = process_frame(frame)
+        out_frame = overlay_poses(
+            poses, 
+            frame, 
+            instance_score_threshold=0.15, 
+            part_score_threshold=0.15
+        )
 
-            # run the image through our network
-            heatmaps_out, offsets_out, displacement_fwd_out, displacement_bwd_out = sess.run(
-                model_outputs,
-                feed_dict={'image:0': input_image}
-            )
+        out_frame = frame_counter.overlay_fps(out_frame)
 
-            # decode the output of the network 
-            pose_scores, keypoint_scores, keypoint_coords = decode.decode_multiple_poses(
-                heatmaps_out.squeeze(axis=0),
-                offsets_out.squeeze(axis=0),
-                displacement_fwd_out.squeeze(axis=0),
-                displacement_bwd_out.squeeze(axis=0),
-                output_stride=16,
-                max_pose_detections=args.max_poses,
-                min_pose_score=args.pose_threshold)
+        # sent our poses to the MQTT topic
+        publish_poses(poses)
 
-            # convert the decoded output to a nice json dictionary
-            poses = convert_raw_output_to_poses(pose_scores, keypoint_scores, keypoint_coords, scale)
-
-            # superimpose the wireframe on our grabbed image
-            out_frame = overlay_poses(
-                poses, 
-                frame, 
-                instance_score_threshold=args.pose_threshold, 
-                part_score_threshold=args.part_threshold
-            )
-
-            out_frame = frame_counter.overlay_fps(out_frame)
-
-            # sent our poses to the MQTT topic
-            publish_poses(poses)
-
-            # show the people what we did
-            cv2.imshow("person!", out_frame)
-            cv2.waitKey(1)
+        # show the people what we did
+        cv2.imshow("person!", out_frame)
+        cv2.waitKey(100)
 
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])

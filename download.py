@@ -43,7 +43,7 @@ def _download_model(output_dir):
     # iterate over the items in the manifest and download the weights
     for item in manifest.values():
         filename = item['filename']
-        print(f'Downloading {filename}... ', end='')
+        print('Downloading %s... '%filename, end='')
         _download_file(output_dir, filename)
         print('Done')
 

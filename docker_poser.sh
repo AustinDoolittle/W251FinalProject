@@ -14,5 +14,5 @@ docker run \
     poser \
     --max-poses 1 \
     --pose-threshold 0.25 \
-    --part-threshold 0.25 \
+    --part-threshold 0.25 
 
