@@ -11,6 +11,7 @@ docker run \
     -e QT_X11_NO_MITSHM=1 \
     -v /tmp:/tmp \
     -v /dev/video1:/dev/video0 \
+    --rm \
     poser \
     --max-poses 1 \
     --pose-threshold 0.25 \

@@ -2,9 +2,6 @@ import os
 
 import cv2
 
-from model import PoseNetModel
-from constants import *
-
 def file_generator(input_dir):
     class_dirs = list(os.listdir(input_dir))
 
@@ -19,13 +16,7 @@ def file_generator(input_dir):
 
 
 def main():
-    model = PoseNetModel('/app/model.pb')
-
-    for class_name, file_path in file_generator('/app/data/images/'):
-        image = cv2.imread(file_path)
-        poses = model.predict(image)
-        print(len(poses))
-
+    pass
 
 
 if __name__ == '__main__':

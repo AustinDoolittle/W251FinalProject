@@ -131,18 +131,17 @@ def main(args):
     config.gpu_options.allow_growth = True
     # enter loop
     c = 0
-    # while True:
-    for class_name, image_path in file_generator('/app/data/images'):
+    while True:
         # read a frame
-        # res, frame = cap.read()
-        frame = cv2.imread(image_path)
+        res, frame = cap.read()
 
         c += 1
 
-        # # check if we were successful
-        # if not res:
-        #     print('Failed to grab frame %i'%c)
-        #     continue
+        # check if we were successful
+        if not res:
+            print('Failed to grab frame %i'%c)
+            continue
+    
         frame_counter.tick()
 
         # scale down the frame, normalize the pixels

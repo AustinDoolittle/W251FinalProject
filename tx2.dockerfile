@@ -54,6 +54,7 @@ COPY --from=0 /tmp/model.pb /app
 # copy our source
 COPY constants.py /app
 COPY decode.py /app
+COPY model.py /app
 COPY find_person.py /app
 
 # set the entrypoint
