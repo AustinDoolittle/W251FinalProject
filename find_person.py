@@ -12,6 +12,13 @@ from constants import *
 import decode
 from model import PoseNetModel
 
+import paho.mqtt.client as mqtt
+import uuid
+import json
+
+MQTT_BROKER_OUT = 'pose_broker_1'
+MQTT_TOPIC_OUT = 'edge_capture'
+
 def file_generator(input_dir):
     class_dirs = list(os.listdir(input_dir))
 
@@ -113,12 +120,21 @@ def overlay_poses(poses, frame, instance_score_threshold=0.5, part_score_thresho
     kp_frame = cv2.drawKeypoints(frame, keypoints, outImage=np.array([]))
     return cv2.polylines(kp_frame, lines, isClosed=False, color=(255,255,0))
 
-def publish_poses(poses):
+def publish_poses(client_uuid, pose, frame):
     # TODO Wire up MQTT
-    pass
+    print('Pose found!') 
+    pose_payload = {'client': client_uuid,
+            'pose': pose,
+            'image': frame}
+    client = mqtt.Client()
+    client.connect(MQTT_BROKER_OUT, 1883, 60)
+    client.publish(MQTT_TOPIC_OUT, payload = str(pose_payload), qos = 0)
+    client.disconnect()
 
 def main(args):
     # Create our video capture device
+    client_uuid = str(uuid.uuid1())
+    print('Client UUID: {}'.format(client_uuid))
     print('Opening video capture')
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH,960)
@@ -155,13 +171,16 @@ def main(args):
         )
 
         out_frame = frame_counter.overlay_fps(out_frame)
-
-        # sent our poses to the MQTT topic
-        publish_poses(poses)
+        
+        for pose in poses:
+            if pose['score'] > .25 and pose['parts']['leftHip']['score'] > .25 and pose['parts']['rightHip']['score'] > .25:
+                # sent our poses to the MQTT topic
+                gray_frame = cv2.cvtColor(out_frame, cv2.COLOR_BGR2GRAY)
+                publish_poses(client_uuid, pose, cv2.imencode('.jpg', gray_frame)[1].tostring())
 
         # show the people what we did
         cv2.imshow("person!", out_frame)
-        cv2.waitKey(100)
+        cv2.waitKey(1000)
 
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])

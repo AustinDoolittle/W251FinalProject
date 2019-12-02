@@ -45,6 +45,8 @@ RUN dpkg -i /tmp/*.deb
 # clean up
 RUN rm -rf /tmp/*
 
+RUN pip3 install paho-mqtt
+
 # create our workspace
 RUN mkdir /app
 
@@ -58,5 +60,5 @@ COPY model.py /app
 COPY find_person.py /app
 
 # set the entrypoint
-# ENTRYPOINT python3
+#ENTRYPOINT python3
 ENTRYPOINT python3 /app/find_person.py --model-file /app/model.pb
