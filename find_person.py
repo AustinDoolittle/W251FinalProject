@@ -171,8 +171,8 @@ def main(args):
 
         display_frame = frame.copy()
         display_frame = overlay_poses(
+            poses, 
             display_frame, 
-            frame, 
             instance_score_threshold=0.15, 
             part_score_threshold=0.15,
             fancy=True
