@@ -1,6 +1,6 @@
 import paho.mqtt.client as mqtt
 MQTT_BROKER_IN='pose_broker_1'
-MQTT_BROKER_OUT='localhost'
+MQTT_BROKER_OUT='192.168.151.200'
 MQTT_TOPIC_IN='edge_capture'
 MQTT_TOPIC_OUT='cloud_capture'
 
