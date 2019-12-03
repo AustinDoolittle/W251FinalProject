@@ -19,6 +19,8 @@ import base64
 
 MQTT_BROKER_OUT = 'pose_broker_1'
 MQTT_TOPIC_OUT = 'edge_capture'
+FANCY_PARTS = ["nose", "leftEye", "rightEye", "leftEar", "rightEar"]
+
 
 def file_generator(input_dir):
     class_dirs = list(os.listdir(input_dir))
@@ -65,9 +67,12 @@ class FrameCounter:
                         0.5, (0, 255, 0), 2, cv2.LINE_AA) 
 
 
-def get_keypoints(parts, threshold=0.5):
+def get_keypoints(parts, threshold=0.5, fancy=False):
     keypoints = []
     for part in parts:
+        if fancy and part in FANCY_PARTS:
+            continue
+
         coords = parts[part]['coords']
         score = parts[part]['score']
 
@@ -102,7 +107,7 @@ def overlay_score(pose, frame, offset = 150):
     return cv2.putText(frame, text, (x_coord, y_coord), cv2.FONT_HERSHEY_SIMPLEX,  
                     0.5, (0, 255, 0), 2, cv2.LINE_AA)
 
-def overlay_poses(poses, frame, instance_score_threshold=0.5, part_score_threshold=0.5):
+def overlay_poses(poses, frame, instance_score_threshold=0.5, part_score_threshold=0.5, fancy=False):
     keypoints = []
     lines = []
     for pose in poses:
@@ -110,9 +115,10 @@ def overlay_poses(poses, frame, instance_score_threshold=0.5, part_score_thresho
             continue
         
         parts = pose['parts']
-        overlay_score(pose, frame)
+        if fancy:
+            overlay_score(pose, frame)
 
-        new_keypoints = get_keypoints(parts, threshold=part_score_threshold)
+        new_keypoints = get_keypoints(parts, threshold=part_score_threshold, fancy=fancy)
         keypoints += new_keypoints
 
         new_lines = get_lines(parts, threshold=part_score_threshold)
@@ -144,8 +150,7 @@ def main(args):
     
     frame_counter = FrameCounter()
     model = PoseNetModel(args.model_file)
-    config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
+
     # enter loop
     c = 0
     while True:
@@ -164,25 +169,35 @@ def main(args):
         # scale down the frame, normalize the pixels
         poses = model.predict(frame)
 
-        out_frame = overlay_poses(
-            poses, 
+        display_frame = frame.copy()
+        display_frame = overlay_poses(
+            display_frame, 
             frame, 
             instance_score_threshold=0.15, 
-            part_score_threshold=0.15
+            part_score_threshold=0.15,
+            fancy=True
         )
+        display_frame = frame_counter.overlay_fps(display_frame)
 
-        out_frame = frame_counter.overlay_fps(out_frame)
-        
+        # show the people what we did
+        cv2.imshow("person!", display_frame)
+        cv2.waitKey(1)
+                
+        inference_frame = overlay_poses(
+            poses, 
+            frame,
+            instance_score_threshold=0.15, 
+            part_score_threshold=0.15,
+            fancy=False
+        )
         for pose in poses:
             if pose['score'] > .25 and pose['parts']['leftHip']['score'] > .25 and pose['parts']['rightHip']['score'] > .25:
                 # sent our poses to the MQTT topic
-                gray_frame = cv2.cvtColor(out_frame, cv2.COLOR_BGR2GRAY)
+                gray_frame = cv2.cvtColor(inference_frame, cv2.COLOR_BGR2GRAY)
                 queue_frame = base64.b64encode(cv2.imencode('.jpg', gray_frame)[1]).decode()
                 publish_poses(client_uuid, pose, queue_frame)
 
-        # show the people what we did
-        cv2.imshow("person!", out_frame)
-        cv2.waitKey(100)
+
 
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
