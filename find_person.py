@@ -15,6 +15,7 @@ from model import PoseNetModel
 import paho.mqtt.client as mqtt
 import uuid
 import json
+import base64
 
 MQTT_BROKER_OUT = 'pose_broker_1'
 MQTT_TOPIC_OUT = 'edge_capture'
@@ -126,9 +127,9 @@ def publish_poses(client_uuid, pose, frame):
     pose_payload = {'client': client_uuid,
             'pose': pose,
             'image': frame}
-    client = mqtt.Client()
+    client = mqtt.Client(client_uuid)
     client.connect(MQTT_BROKER_OUT, 1883, 60)
-    client.publish(MQTT_TOPIC_OUT, payload = str(pose_payload), qos = 0)
+    client.publish(MQTT_TOPIC_OUT, payload = json.dumps(pose_payload), qos = 1)
     client.disconnect()
 
 def main(args):
@@ -176,11 +177,12 @@ def main(args):
             if pose['score'] > .25 and pose['parts']['leftHip']['score'] > .25 and pose['parts']['rightHip']['score'] > .25:
                 # sent our poses to the MQTT topic
                 gray_frame = cv2.cvtColor(out_frame, cv2.COLOR_BGR2GRAY)
-                publish_poses(client_uuid, pose, cv2.imencode('.jpg', gray_frame)[1].tostring())
+                queue_frame = base64.b64encode(cv2.imencode('.jpg', gray_frame)[1]).decode()
+                publish_poses(client_uuid, pose, queue_frame)
 
         # show the people what we did
         cv2.imshow("person!", out_frame)
-        cv2.waitKey(1000)
+        cv2.waitKey(100)
 
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])

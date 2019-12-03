@@ -1,15 +1,14 @@
 import paho.mqtt.client as mqtt
 MQTT_BROKER_IN='pose_broker_1'
-MQTT_BROKER_OUT='cloud_broker_1'
+MQTT_BROKER_OUT='localhost'
 MQTT_TOPIC_IN='edge_capture'
 MQTT_TOPIC_OUT='cloud_capture'
 
 
 def on_message(client, userdata, message):
-    print('Forwarding Message from {}'.format(message.payload['client']))
     client_out = mqtt.Client()
     client_out.connect(MQTT_BROKER_OUT, 1884, 60)
-    client_out.publish(MQTT_TOPIC_OUT, payload=message.payload, qos=0)
+    client_out.publish(MQTT_TOPIC_OUT, payload=message.payload, qos=1)
     client_out.disconnect()
     #print(message.payload)
 
