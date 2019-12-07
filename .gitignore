@@ -1,4 +1,5 @@
 .vscode
 out/*
 data/*
-.bucket_credential
+docker_cloud/.bucket_credential
+docker_cloud/.mongo_secrets

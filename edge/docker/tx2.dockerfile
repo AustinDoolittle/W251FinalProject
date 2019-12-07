@@ -7,8 +7,8 @@ RUN apt-get update && \
 
 RUN pip3 install requests
 
-COPY download.py /tmp/
-COPY constants.py /tmp/
+COPY scripts/download.py /tmp/
+COPY scripts/constants.py /tmp/
 
 RUN python3 /tmp/download.py  --output-model-file /tmp/model.pb
 
@@ -54,10 +54,10 @@ RUN mkdir /app
 COPY --from=0 /tmp/model.pb /app
 
 # copy our source
-COPY constants.py /app
-COPY decode.py /app
-COPY model.py /app
-COPY find_person.py /app
+COPY scripts/constants.py /app
+COPY scripts/decode.py /app
+COPY scripts/model.py /app
+COPY scripts/find_person.py /app
 
 # set the entrypoint
 #ENTRYPOINT python3

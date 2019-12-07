@@ -16,7 +16,7 @@ def on_message(client, userdata, message):
     client_uuid = msg['client']
     rn = dt.datetime.now()
     dt_str = rn.strftime("%Y%m%d_%H%M%f")
-    save_path = '/tmp/{}/{}/{}/{}/'.format(BUCKET_NAME, str(rn.year), str(rn.month), str(rn.day))
+    save_path = '/data/images/{}/{}/{}/{}/'.format(BUCKET_NAME, str(rn.year), str(rn.month), str(rn.day))
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     fn = '{}/image_{}_{}.jpg'.format(save_path, client_uuid, dt_str)
