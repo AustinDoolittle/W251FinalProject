@@ -3,3 +3,6 @@ out/*
 data/*
 docker_cloud/.bucket_credential
 docker_cloud/.mongo_secrets
+cloud/credentials
+cloud/credentials/*
+cloud/credentials/.*
