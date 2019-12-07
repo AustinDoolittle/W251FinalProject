@@ -7,6 +7,6 @@ RUN pip3 install paho-mqtt
 
 RUN mkdir /app
 
-COPY image_processor.py /app
+COPY scripts/image_processor.py /app
 
 ENTRYPOINT python3 /app/image_processor.py

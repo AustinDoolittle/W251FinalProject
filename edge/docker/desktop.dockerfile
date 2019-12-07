@@ -24,7 +24,7 @@ RUN pip install \
 RUN mkdir /app
 
 # copy our source
-COPY train_mlp.py /app
+COPY scripts/train_mlp.py /app
 
 # set the entrypoint
 # ENTRYPOINT python3
