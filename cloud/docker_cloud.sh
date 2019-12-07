@@ -13,4 +13,4 @@ docker run -d --rm --name cloud_processor_1 -v /data/images:/data/images --netwo
 
 mkdir -p /data/db
 
-docker run -d --rm --name cloud_mongo -v /data/db:/data/db --network cloudnet -e MONGO_INITDB_ROOT_PASSWORD_FILE=credentials/.mongodb_secrets -p 27017:27017 mongo
+docker run -d --rm --name cloud_mongo_1 -v /data/db:/data/db --network cloudnet -p 27017:27017 mongo
