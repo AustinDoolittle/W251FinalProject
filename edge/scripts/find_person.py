@@ -171,6 +171,8 @@ def main(args):
 
     # enter loop
     c = 0
+    last_time = 0
+
     while True:
         # read a frame
         res, frame = cap.read()
@@ -209,12 +211,18 @@ def main(args):
             part_score_threshold=0.15,
             fancy=False
         )
+
+        current_time = int(time.time())
         for pose in poses:
-            if pose['score'] > .25 and pose['parts']['leftHip']['score'] > .25 and pose['parts']['rightHip']['score'] > .25:
+            if pose['score'] > .25 \
+                    and pose['parts']['leftHip']['score'] > .25 \
+                    and pose['parts']['rightHip']['score'] > .25 \
+                    and current_time > last_time:
                 # sent our poses to the MQTT topic
                 gray_frame = cv2.cvtColor(inference_frame, cv2.COLOR_BGR2GRAY)
                 queue_frame = base64.b64encode(cv2.imencode('.jpg', gray_frame)[1]).decode()
                 publish_poses(client_uuid, pose, queue_frame, pose_label)
+                last_time = current_time
 
 
 

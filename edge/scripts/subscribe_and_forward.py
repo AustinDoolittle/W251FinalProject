@@ -6,11 +6,15 @@ MQTT_TOPIC_OUT='cloud_capture'
 
 
 def on_message(client, userdata, message):
-    client_out = mqtt.Client()
-    client_out.connect(MQTT_BROKER_OUT, 1884, 60)
+    #client_out = mqtt.Client()
+    #client_out.connect(MQTT_BROKER_OUT, 1884, 60)
     client_out.publish(MQTT_TOPIC_OUT, payload=message.payload, qos=0)
-    client_out.disconnect()
+    #client_out.disconnect()
     #print(message.payload)
+
+client_out = mqtt.Client()
+client_out.connect(MQTT_BROKER_OUT, 1884, 60)
+
 
 client_in = mqtt.Client()
 client_in.connect(MQTT_BROKER_IN,1883)
