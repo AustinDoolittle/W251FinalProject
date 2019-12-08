@@ -1,6 +1,6 @@
 import paho.mqtt.client as mqtt
 MQTT_BROKER_IN='pose_broker_1'
-MQTT_BROKER_OUT='192.168.151.200'
+MQTT_BROKER_OUT='50.22.176.123'
 MQTT_TOPIC_IN='edge_capture'
 MQTT_TOPIC_OUT='cloud_capture'
 
@@ -8,7 +8,7 @@ MQTT_TOPIC_OUT='cloud_capture'
 def on_message(client, userdata, message):
     client_out = mqtt.Client()
     client_out.connect(MQTT_BROKER_OUT, 1884, 60)
-    client_out.publish(MQTT_TOPIC_OUT, payload=message.payload, qos=1)
+    client_out.publish(MQTT_TOPIC_OUT, payload=message.payload, qos=0)
     client_out.disconnect()
     #print(message.payload)
 

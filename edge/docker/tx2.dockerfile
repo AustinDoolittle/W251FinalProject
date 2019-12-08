@@ -61,9 +61,7 @@ COPY scripts/constants.py /app
 COPY scripts/decode.py /app
 COPY scripts/model.py /app
 COPY scripts/find_person.py /app
-COPY scripts/load_model.py /app
 
 # set the entrypoint
 #ENTRYPOINT python3
 ENTRYPOINT python3 /app/find_person.py --model-file /app/model.pb
-#ENTRYPOINT python3 /app/load_model.py

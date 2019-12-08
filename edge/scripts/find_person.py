@@ -153,7 +153,7 @@ def publish_poses(client_uuid, pose, frame, pose_label):
             'label': pose_label}
     client = mqtt.Client(client_uuid)
     client.connect(MQTT_BROKER_OUT, 1883, 60)
-    client.publish(MQTT_TOPIC_OUT, payload = json.dumps(pose_payload), qos = 1)
+    client.publish(MQTT_TOPIC_OUT, payload = json.dumps(pose_payload), qos = 0)
     client.disconnect()
 
 def main(args):
