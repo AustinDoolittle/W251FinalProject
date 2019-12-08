@@ -17,10 +17,15 @@ import uuid
 import json
 import base64
 
+import h5py
+
 MQTT_BROKER_OUT = 'pose_broker_1'
 MQTT_TOPIC_OUT = 'edge_capture'
 FANCY_PARTS = ["nose", "leftEye", "rightEye", "leftEar", "rightEar"]
 
+tf.compat.v1.enable_v2_behavior()
+
+POSE_MODEL = tf.keras.models.load_model('/app/my_model_multiclass9.h5')
 
 def file_generator(input_dir):
     class_dirs = list(os.listdir(input_dir))
@@ -127,12 +132,25 @@ def overlay_poses(poses, frame, instance_score_threshold=0.5, part_score_thresho
     kp_frame = cv2.drawKeypoints(frame, keypoints, outImage=np.array([]))
     return cv2.polylines(kp_frame, lines, isClosed=False, color=(255,255,0))
 
-def publish_poses(client_uuid, pose, frame):
+def overlay_pose_label(frame):
+    pose_label = ''
+    resized_frame = cv2.resize(frame, (68,68))
+    frame_array = tf.keras.preprocessing.image.img_to_array(resized_frame)
+    frame_array = np.expand_dims(frame_array, axis = 0)
+    categories = ['bridge', 'childs', 'downward dog', 'forward fold', 'mountain', 'plank', 'tree', 'triangle', 'warrior']
+    pose_label = categories[POSE_MODEL.predict_classes(frame_array)[0]]
+
+    return pose_label, cv2.putText(frame, pose_label, (400, 25), cv2.FONT_HERSHEY_SIMPLEX,
+        0.8, (0, 255, 0), 2, cv2.LINE_AA)
+
+
+def publish_poses(client_uuid, pose, frame, pose_label):
     # TODO Wire up MQTT
     print('Pose found!') 
     pose_payload = {'client': client_uuid,
             'pose': pose,
-            'image': frame}
+            'image': frame,
+            'label': pose_label}
     client = mqtt.Client(client_uuid)
     client.connect(MQTT_BROKER_OUT, 1883, 60)
     client.publish(MQTT_TOPIC_OUT, payload = json.dumps(pose_payload), qos = 1)
@@ -179,6 +197,7 @@ def main(args):
         )
         display_frame = frame_counter.overlay_fps(display_frame)
 
+        pose_label, display_frame = overlay_pose_label(display_frame)
         # show the people what we did
         cv2.imshow("person!", display_frame)
         cv2.waitKey(1)
@@ -195,7 +214,7 @@ def main(args):
                 # sent our poses to the MQTT topic
                 gray_frame = cv2.cvtColor(inference_frame, cv2.COLOR_BGR2GRAY)
                 queue_frame = base64.b64encode(cv2.imencode('.jpg', gray_frame)[1]).decode()
-                publish_poses(client_uuid, pose, queue_frame)
+                publish_poses(client_uuid, pose, queue_frame, pose_label)
 
 
 

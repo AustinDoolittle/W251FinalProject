@@ -31,10 +31,12 @@ def on_message(client, userdata, message):
     save_path = '/data/images/{}/{}/{}/{}/'.format(BUCKET_NAME, str(rn.year), str(rn.month), str(rn.day))
     if not os.path.exists(save_path):
         os.makedirs(save_path)
-    fn = '{}/image_{}_{}.jpg'.format(save_path, client_uuid, dt_str)
-    with open(fn, 'wb') as f_output:
+    file_name = 'image_{}_{}.jpg'.format(client_uuid, dt_str)
+    full_name = '{}/{}'.format(save_path, file_name)
+    with open(full_name, 'wb') as f_output:
         f_output.write(base64.b64decode(msg.pop('image')))
-    
+    msg['file_name'] = file_name
+    msg['capture_dt'] = dt_str
     mongo_result = mongo_collection.insert_one(msg)
     
     return

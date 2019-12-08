@@ -20,6 +20,7 @@ docker run \
     -e QT_X11_NO_MITSHM=1 \
     -v /tmp:/tmp \
     -v /dev/video1:/dev/video0 \
+    -v /data:/data \
     --rm \
     --network localnet \
     --name pose_capture_1 \

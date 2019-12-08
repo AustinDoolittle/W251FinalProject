@@ -45,7 +45,7 @@ RUN dpkg -i /tmp/*.deb
 # clean up
 RUN rm -rf /tmp/*
 
-RUN pip3 install paho-mqtt
+RUN pip3 install paho-mqtt h5py 
 
 # create our workspace
 RUN mkdir /app
@@ -53,12 +53,17 @@ RUN mkdir /app
 # copy the model from the build step
 COPY --from=0 /tmp/model.pb /app
 
+# copy pose classification model
+COPY Model/my_model_multiclass9.h5 /app
+
 # copy our source
 COPY scripts/constants.py /app
 COPY scripts/decode.py /app
 COPY scripts/model.py /app
 COPY scripts/find_person.py /app
+COPY scripts/load_model.py /app
 
 # set the entrypoint
 #ENTRYPOINT python3
 ENTRYPOINT python3 /app/find_person.py --model-file /app/model.pb
+#ENTRYPOINT python3 /app/load_model.py
