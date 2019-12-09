@@ -42,6 +42,8 @@ def file_generator(input_dir):
 def parse_args(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('--model-file', required=True)
+    parser.add_argument('--video-source', type=str, default=0)
+    parser.add_argument('--video-out', type=str)
 
     return parser.parse_args(argv)
 
@@ -157,15 +159,27 @@ def publish_poses(client_uuid, pose, frame, pose_label):
     client.disconnect()
 
 def main(args):
+
+    try:
+        video_cap_source = int(args.video_source)
+    except TypeError:
+        video_cap_source = args.video_source
+        
+    video_dims = (960,720)
     # Create our video capture device
     client_uuid = str(uuid.uuid1())
     print('Client UUID: {}'.format(client_uuid))
     print('Opening video capture')
-    cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH,960)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT,720)
+    cap = cv2.VideoCapture(video_cap_source)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH,video_dims[0])
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT,video_dims[1])
     print('successfully opened')
     
+    if args.video_out:
+        fps = cap.get(cv2.cv.CV_CAP_PROP_FPS)
+        codec = cv2.VideoWriter_fourcc(*'XVID')
+        writer = cv2.VideoWriter(args.video_out, codec, 15.0, video_dims)
+
     frame_counter = FrameCounter()
     model = PoseNetModel(args.model_file)
 
@@ -203,6 +217,9 @@ def main(args):
         # show the people what we did
         cv2.imshow("person!", display_frame)
         cv2.waitKey(1)
+
+        if args.video_out:
+            writer.write(display_frame)
                 
         inference_frame = overlay_poses(
             poses, 
